@@ -1,14 +1,31 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Correlation Matrix Heatmap</title>
+    <title>Interactive Correlation Matrix Heatmap</title>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #000000;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .heatmap-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .heatmap {
+            display: flex;
+            justify-content: center;
         }
 
         .heatmap text {
@@ -18,18 +35,56 @@
 
         .axis text {
             font-size: 12px;
+            fill: white;
+            transition: all 0.2s ease; /* Smooth transition for color/size changes */
         }
 
         .title {
-            text-anchor: middle;
+            margin-top: 5;
             font-size: 18px;
             font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .highlight {
+            font-size: 16px;
+            fill: orange;
+        }
+
+        .highlight-cell {
+            stroke: yellow;
+            stroke-width: 2;
+        }
+
+        .highlight-value {
+            font-size: 14px;
+            fill: orange;
+        }
+
+        .highlight-axis {
+            font-size: 14px;
+            fill: orange;
+            font-weight: bold;
+        }
+        .description {
+            margin-top: 0px;  /* Reduced space between heatmap and description */
+            font-size: 17px;
+            color: white;
+            width: 80%;
+            margin: 0 auto;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <h2 style="text-align: center;">Correlation Matrix Heatmap</h2>
-    <div id="heatmap"></div>
+    <div class="heatmap-container">
+        
+        <div class="heatmap" id="heatmap"></div>
+        <div class="description">
+            <p>This heat map visualizes the relationships between track metrics such as track score and YouTube views, revealing how these metrics interact and contribute to a track's success across different platforms.</p>
+        </div>
+    </div>
+    
     <script>
         // Correlation matrix data
         const data = [
@@ -90,9 +145,9 @@
             { row: "YouTube Views", col: "YouTube Views", value: 1.00 }
         ];
 
-        const margin = { top: 80, right: 20, bottom: 100, left: 80 };
-        const width = 600 - margin.left - margin.right;
-        const height = 600 - margin.top - margin.bottom;
+        const margin = { top: 60, right: 20, bottom: 100, left: 123 };
+        const width = 650 - margin.left - margin.right;
+        const height = 650 - margin.top - margin.bottom;
 
         const svg = d3.select("#heatmap")
             .append("svg")
@@ -104,38 +159,76 @@
         const rows = [...new Set(data.map(d => d.row))];
         const cols = [...new Set(data.map(d => d.col))];
 
-        const minValue = d3.min(data, d => d.value);
-        const maxValue = d3.max(data, d => d.value);
-
         const colorScale = d3.scaleSequential()
             .interpolator(d3.interpolateRdBu)
-            .domain([minValue, maxValue]); // Swap to reverse red and blue
+            .domain(d3.extent(data, d => d.value));
 
         const xScale = d3.scaleBand().domain(cols).range([0, width]).padding(0.05);
         const yScale = d3.scaleBand().domain(rows).range([0, height]).padding(0.05);
 
-        svg.selectAll("rect")
+        svg.append("text")
+    .attr("class", "title")
+    .attr("x", width / 2)
+    .attr("y", -30) // Adjusted y position to reduce space
+    .attr("text-anchor", "middle") // Center the title
+    .style("fill", "white") // Ensure the text color is visible
+    .style("font-size", "30px") // Make the text size prominent
+    .style("font-weight", "bold") // Make the text bold
+    .text("Correlation Heat Map of Track Metrics");
+
+
+        // Draw cells
+        const cells = svg.selectAll("g.cell")
             .data(data)
-            .enter().append("rect")
+            .enter()
+            .append("g")
+            .attr("class", "cell")
+            .on("mouseover", function(event, d) {
+                d3.selectAll(`.x-axis text[data-col='${d.col}'], .y-axis text[data-row='${d.row}']`)
+                    .classed("highlight-axis", true);
+                d3.select(this).select("rect").classed("highlight-cell", true);
+                d3.select(this).select("text").classed("highlight-value", true);
+            })
+            .on("mouseout", function() {
+                d3.selectAll(".x-axis text, .y-axis text").classed("highlight-axis", false);
+                d3.select(this).select("rect").classed("highlight-cell", false);
+                d3.select(this).select("text").classed("highlight-value", false);
+            });
+
+        cells.append("rect")
             .attr("x", d => xScale(d.col))
             .attr("y", d => yScale(d.row))
             .attr("width", xScale.bandwidth())
             .attr("height", yScale.bandwidth())
             .style("fill", d => colorScale(d.value));
 
-        svg.selectAll("text.value")
-            .data(data)
-            .enter().append("text")
-            .attr("class", "value")
+        // Add text labels to cells
+        cells.append("text")
             .attr("x", d => xScale(d.col) + xScale.bandwidth() / 2)
             .attr("y", d => yScale(d.row) + yScale.bandwidth() / 2)
-            .attr("text-anchor", "middle")
-            .attr("dy", "0.35em")
-            .style("fill", d => Math.abs(d.value) > 0.5 ? "white" : "black")
+            .attr("dy", ".35em")
+            .style("text-anchor", "middle")
+            .style("pointer-events", "none")
+            .style("font-size", "17px")
+            .style("fill","white")
             .text(d => d.value.toFixed(2));
 
-        svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xScale).tickSize(0)).selectAll("text").attr("transform", "rotate(-45)").style("text-anchor", "end");
-        svg.append("g").call(d3.axisLeft(yScale).tickSize(0));
+        // Draw x-axis
+        svg.append("g")
+            .attr("class", "x-axis")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(xScale).tickSize(0))
+            .selectAll("text")
+            .attr("data-col", d => d)
+            .attr("transform", "rotate(-45)")
+            .style("text-anchor", "end");
+
+        // Draw y-axis
+        svg.append("g")
+            .attr("class", "y-axis")
+            .call(d3.axisLeft(yScale).tickSize(0))
+            .selectAll("text")
+            .attr("data-row", d => d);
     </script>
 </body>
 </html>
