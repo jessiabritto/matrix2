@@ -4,11 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Correlation Matrix Heatmap</title>
+    <title>Interactive Correlation Matrix Heatmap</title>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: black;
+            color: white;
+        }
+
+        .heatmap-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .heatmap svg {
+            width: 700px;
+            height: 700px;
         }
 
         .heatmap text {
@@ -18,20 +35,50 @@
 
         .axis text {
             font-size: 12px;
+            fill: white;
+            transition: font-size 0.2s, fill 0.2s;
+        }
+
+        .axis text.highlight {
+            font-size: 16px;
+            fill: orange;
+        }
+
+        .highlight-text {
+            font-size: 14px;
+            fill: yellow;
+        }
+
+        .highlight-value {
+            font-size: 16px;
         }
 
         .title {
             text-anchor: middle;
-            font-size: 18px;
+            font-size: 30px;
             font-weight: bold;
+            fill: white;
+            margin-bottom: 20px; /* Optional for more control */
+        }
+
+        .description {
+            margin-top: 20px;
+            font-size: 17px;
+            color: white;
+            width: 80%;
+            margin: 0 auto;
         }
     </style>
 </head>
 <body>
-    
-    <div id="heatmap"></div>
+    <div class="heatmap-container">
+        <div id="heatmap"></div>
+        <div class="description">
+            <p>This correlation heat map visualizes the relationships between key track attributes such as loudness, acousticness, danceability, and energy. By analyzing these correlations, we can identify patterns and interactions that shape a song's overall audio profile, providing insights into how these features influence each other and contribute to listener appeal.</p>
+        </div>
+    </div>
+
     <script>
-        // Full correlation matrix data
         const data = [
             { row: "danceability", col: "danceability", value: 1.00 },
             { row: "danceability", col: "energy", value: -0.028 },
@@ -41,7 +88,6 @@
             { row: "danceability", col: "instrumentalness", value: 0.019 },
             { row: "danceability", col: "liveness", value: -0.095 },
             { row: "danceability", col: "tempo", value: -0.189 },
-
             { row: "energy", col: "danceability", value: -0.028 },
             { row: "energy", col: "energy", value: 1.00 },
             { row: "energy", col: "loudness", value: 0.692 },
@@ -50,7 +96,6 @@
             { row: "energy", col: "instrumentalness", value: 0.012 },
             { row: "energy", col: "liveness", value: 0.150 },
             { row: "energy", col: "tempo", value: 0.123 },
-
             { row: "loudness", col: "danceability", value: 0.042 },
             { row: "loudness", col: "energy", value: 0.692 },
             { row: "loudness", col: "loudness", value: 1.00 },
@@ -59,7 +104,6 @@
             { row: "loudness", col: "instrumentalness", value: -0.131 },
             { row: "loudness", col: "liveness", value: 0.082 },
             { row: "loudness", col: "tempo", value: 0.079 },
-
             { row: "speechiness", col: "danceability", value: 0.178 },
             { row: "speechiness", col: "energy", value: 0.0001 },
             { row: "speechiness", col: "loudness", value: -0.030 },
@@ -68,7 +112,6 @@
             { row: "speechiness", col: "instrumentalness", value: -0.049 },
             { row: "speechiness", col: "liveness", value: 0.064 },
             { row: "speechiness", col: "tempo", value: 0.064 },
-
             { row: "acousticness", col: "danceability", value: -0.122 },
             { row: "acousticness", col: "energy", value: -0.550 },
             { row: "acousticness", col: "loudness", value: -0.425 },
@@ -77,7 +120,6 @@
             { row: "acousticness", col: "instrumentalness", value: -0.011 },
             { row: "acousticness", col: "liveness", value: -0.094 },
             { row: "acousticness", col: "tempo", value: -0.094 },
-
             { row: "instrumentalness", col: "danceability", value: 0.019 },
             { row: "instrumentalness", col: "energy", value: 0.012 },
             { row: "instrumentalness", col: "loudness", value: -0.131 },
@@ -86,7 +128,6 @@
             { row: "instrumentalness", col: "instrumentalness", value: 1.00 },
             { row: "instrumentalness", col: "liveness", value: -0.029 },
             { row: "instrumentalness", col: "tempo", value: 0.030 },
-
             { row: "liveness", col: "danceability", value: -0.095 },
             { row: "liveness", col: "energy", value: 0.150 },
             { row: "liveness", col: "loudness", value: 0.082 },
@@ -95,7 +136,6 @@
             { row: "liveness", col: "instrumentalness", value: -0.029 },
             { row: "liveness", col: "liveness", value: 1.00 },
             { row: "liveness", col: "tempo", value: 0.019 },
-
             { row: "tempo", col: "danceability", value: -0.189 },
             { row: "tempo", col: "energy", value: 0.123 },
             { row: "tempo", col: "loudness", value: 0.079 },
@@ -106,9 +146,9 @@
             { row: "tempo", col: "tempo", value: 1.00 },
         ];
 
-        const margin = { top: 80, right: 20, bottom: 100, left: 80 };
-        const width = 600 - margin.left - margin.right;
-        const height = 600 - margin.top - margin.bottom;
+        const margin = { top: 100, right: 30, bottom: 120, left: 123 };  // Reduced top margin
+        const width = 700 - margin.left - margin.right;
+        const height = 700 - margin.top - margin.bottom;
 
         const svg = d3.select("#heatmap")
             .append("svg")
@@ -123,12 +163,19 @@
         const minValue = d3.min(data, d => d.value);
         const maxValue = d3.max(data, d => d.value);
 
-        // Swap color scale so high correlation is blue
         const colorScale = d3.scaleSequential(d3.interpolateRdBu).domain([minValue, maxValue]);
 
         const xScale = d3.scaleBand().domain(cols).range([0, width]).padding(0.05);
         const yScale = d3.scaleBand().domain(rows).range([0, height]).padding(0.05);
 
+        // Title
+        svg.append("text")
+            .attr("class", "title")
+            .attr("x", width / 2)
+            .attr("y", -60)
+            .text("Correlation Heat Map of Track Attributes");
+
+        // Draw heatmap cells
         svg.selectAll("rect")
             .data(data)
             .enter().append("rect")
@@ -136,28 +183,52 @@
             .attr("y", d => yScale(d.row))
             .attr("width", xScale.bandwidth())
             .attr("height", yScale.bandwidth())
-            .style("fill", d => colorScale(d.value));
+            .style("fill", d => colorScale(d.value))
+            .on("mouseover", function (event, d) {
+                d3.selectAll(".axis text").classed("highlight", false);
+                d3.selectAll(`.axis text[data-row='${d.row}'], .axis text[data-col='${d.col}']`)
+                    .classed("highlight", true);
 
-        // Add correlation values as text
-        svg.selectAll("text.value")
+                d3.select(this)
+                    .style("stroke", "yellow")
+                    .style("stroke-width", 2);
+
+                d3.select(`text[data-value='${d.value}']`)
+                    .classed("highlight-value", true);
+            })
+            .on("mouseout", function () {
+                d3.selectAll(".axis text").classed("highlight", false);
+                d3.selectAll(".highlight-value").classed("highlight-value", false);
+                d3.select(this).style("stroke", "none");
+            });
+
+        svg.selectAll(".text-label")
             .data(data)
             .enter().append("text")
-            .attr("class", "value")
+            .attr("class", "text-label")
             .attr("x", d => xScale(d.col) + xScale.bandwidth() / 2)
             .attr("y", d => yScale(d.row) + yScale.bandwidth() / 2)
+            .attr("dy", ".35em")
             .attr("text-anchor", "middle")
-            .attr("alignment-baseline", "middle")
-            .style("fill", d => Math.abs(d.value) > 0.5 ? "white" : "black") // Contrast adjustment
+            .style("fill", "white")
+            .style("font-size", "17px")
+            .attr("data-value", d => d.value)
             .text(d => d.value.toFixed(2));
 
         svg.append("g")
+            .attr("class", "axis")
             .attr("transform", `translate(0,${height})`)
             .call(d3.axisBottom(xScale).tickSize(0))
             .selectAll("text")
+            .attr("data-col", d => d)
             .attr("transform", "rotate(-45)")
             .style("text-anchor", "end");
 
-        svg.append("g").call(d3.axisLeft(yScale).tickSize(0));
+        svg.append("g")
+            .attr("class", "axis")
+            .call(d3.axisLeft(yScale).tickSize(0))
+            .selectAll("text")
+            .attr("data-row", d => d);
     </script>
 </body>
 </html>
