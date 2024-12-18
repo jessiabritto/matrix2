@@ -13,7 +13,7 @@
             background-color: black;
             color: white;
         }
-
+    
         .heatmap-container {
             display: flex;
             justify-content: center;
@@ -22,37 +22,37 @@
             height: 100vh;
             text-align: center;
         }
-
+    
         .heatmap svg {
             width: 700px;
             height: 700px;
         }
-
+    
         .heatmap text {
             font-size: 10px;
             pointer-events: none;
         }
-
+    
         .axis text {
             font-size: 12px;
             fill: white;
             transition: font-size 0.2s, fill 0.2s;
         }
-
+    
         .axis text.highlight {
             font-size: 16px;
             fill: orange;
         }
-
+    
         .highlight-text {
             font-size: 14px;
             fill: yellow;
         }
-
+    
         .highlight-value {
             font-size: 16px;
         }
-
+    
         .title {
             text-anchor: middle;
             font-size: 30px;
@@ -60,15 +60,16 @@
             fill: white;
             margin-bottom: 20px; /* Optional for more control */
         }
-
+    
         .description {
-            margin-top: 20px;
+            margin-top: 1px;  /* Reduced space between heatmap and description */
             font-size: 17px;
             color: white;
             width: 80%;
             margin: 0 auto;
         }
     </style>
+    
 </head>
 <body>
     <div class="heatmap-container">
@@ -146,7 +147,7 @@
             { row: "tempo", col: "tempo", value: 1.00 },
         ];
 
-        const margin = { top: 100, right: 30, bottom: 120, left: 123 };  // Reduced top margin
+        const margin = { top: 100, right: 30, bottom: 100, left: 123 };  // Reduced top margin
         const width = 700 - margin.left - margin.right;
         const height = 700 - margin.top - margin.bottom;
 
